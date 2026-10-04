@@ -44,6 +44,7 @@ A proposal is only data. The agent cannot call the broker, change risk limits, d
 
 | Package | Role | Eventually does |
 |---|---|---|
+| `core/` | Contract | Data-only types shared by agent and bot (`TradeProposal`, `Action`). No logic. |
 | `agent/` | **Thinks** | Gathers context, prompts Claude, returns a structured proposal (ticker, action, confidence, entry, stop loss, take profit, reasoning). Never executes. |
 | `bot/` | **Controls** | Validates proposals, enforces stop-loss, exposure, and daily-loss rules, sizes positions, approves or rejects, and forwards approved orders to execution. Deterministic Python only. |
 | `execution/` | **Executes** | Broker interface with a paper-trading implementation. Called only by the bot. |
@@ -52,7 +53,16 @@ A proposal is only data. The agent cannot call the broker, change risk limits, d
 | `memory/` | Audit trail | External, auditable store of every proposal, decision, and outcome. The bot writes, the agent reads. Claude does not "learn"; past trades are retrieved explicitly. |
 | `tests/` | Safety net | Unit tests plus architecture tests that enforce the boundaries above. |
 
-### Example proposal (future)
+Version 1 is **long-only**:
+
+- **BUY** opens a long position. A stop loss is required; take profit is optional.
+- **SELL** closes an existing long position. It never opens a short, and there is no partial-sell quantity yet.
+- **HOLD** means no trade.
+- Proposals never contain quantities; the bot decides size.
+
+The bot works in two stages: **structural validation** (is the proposal well-formed?) and then **risk approval** (is it allowed?). Passing validation does not mean a trade is approved.
+
+### Example proposal
 
 ```
 Ticker: NVDA      Action: BUY       Confidence: 0.84
@@ -77,7 +87,7 @@ pytest                  # runs tests
 ## Status / Roadmap
 
 - [x] Project foundation and architecture boundaries
-- [ ] Trade proposal schema (shared contract between agent and bot)
+- [x] Trade proposal schema (`core/proposal.py`) and structural validation (`bot/validation.py`)
 - [ ] Deterministic risk manager and position sizing
 - [ ] Paper execution (simulated, then paper broker API)
 - [ ] Trade memory (SQLite)

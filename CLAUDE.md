@@ -18,12 +18,25 @@ Hybrid AI trading system for education and research. Read README.md for the arch
 
 | Package | May import | Must not import |
 |---|---|---|
-| `agent/` | `data`, `strategy`, `memory` (read) | `bot`, `execution` |
-| `bot/` | `execution`, `memory`, `data` | `agent` |
-| `execution/` | stdlib / broker SDK | `agent`, `bot` |
-| `data/`, `strategy/`, `memory/` | each other as needed | `bot`, `execution` |
+| `core/` | stdlib only | any other project package |
+| `agent/` | `core`, `data`, `strategy`, `memory` (read) | `bot`, `execution` |
+| `bot/` | `core`, `execution`, `memory`, `data` | `agent` |
+| `execution/` | `core`, stdlib / broker SDK | `agent`, `bot` |
+| `data/`, `strategy/`, `memory/` | `core`, each other as needed | `bot`, `execution` |
 
-A shared, behavior-free contract module (e.g. the `TradeProposal` schema) will be added when proposals are implemented. Both sides may import it.
+`core/` holds data-only contracts (e.g. `TradeProposal`): no validation, no logic, no I/O. All validation lives in `bot/`.
+
+## Trading semantics (Version 1: long-only)
+
+- **BUY**: open or add to a long position. Requires entry and a stop loss below entry. Take profit is optional by design, because some future strategies may use other exit mechanisms. If set, it must be above entry.
+- **SELL**: close an EXISTING long position. It never opens a short. Stop loss and take profit must not be set. `entry` is the proposed exit price (None means exit at market). Portfolio ownership checks come later, once portfolio state exists.
+- **HOLD**: no trade. No price fields may be set.
+- **No quantities in proposals.** The agent never specifies size. Position sizing, and any future partial-sell quantity, is decided by the bot. Do not add a quantity field to `TradeProposal` in V1.
+- Short selling is out of scope. Do not implement it.
+
+## Validity is not approval
+
+`ValidationResult.is_valid` means only that a proposal is structurally well-formed. It must never be treated as approval to execute. Approval is a separate, later decision made by the deterministic risk manager. Never send an order to `execution/` based on `is_valid` alone.
 
 ## Development workflow
 

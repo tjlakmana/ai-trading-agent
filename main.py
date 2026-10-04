@@ -6,7 +6,7 @@ foundation loads and reports its status.
 
 import sys
 
-COMPONENTS = ("agent", "bot", "data", "strategy", "execution", "memory")
+COMPONENTS = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
 
 
 def main() -> int:

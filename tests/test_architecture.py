@@ -9,10 +9,15 @@ import pytest
 import main
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGES = ("agent", "bot", "data", "strategy", "execution", "memory")
+PACKAGES = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
 
-# The agent proposes; it must never reach the bot's internals or the broker.
-AGENT_FORBIDDEN_IMPORTS = ("bot", "execution")
+# Package -> project packages it must never import.
+FORBIDDEN_IMPORTS = {
+    # The agent proposes; it must never reach the bot's internals or the broker.
+    "agent": {"bot", "execution"},
+    # core is the neutral contract; it must not depend on any other project code.
+    "core": set(PACKAGES) - {"core"} | {"main", "tests"},
+}
 
 
 @pytest.mark.parametrize("name", PACKAGES)
@@ -31,13 +36,17 @@ def _imported_top_level_modules(path: Path) -> set[str]:
     return found
 
 
-def test_agent_never_imports_bot_or_execution():
+@pytest.mark.parametrize("package", sorted(FORBIDDEN_IMPORTS))
+def test_forbidden_imports(package):
+    forbidden = FORBIDDEN_IMPORTS[package]
     violations = []
-    for path in (ROOT / "agent").rglob("*.py"):
-        bad = _imported_top_level_modules(path) & set(AGENT_FORBIDDEN_IMPORTS)
+    for path in (ROOT / package).rglob("*.py"):
+        bad = _imported_top_level_modules(path) & forbidden
         if bad:
             violations.append(f"{path.relative_to(ROOT)} imports {sorted(bad)}")
-    assert not violations, "Agent must not import bot/execution:\n" + "\n".join(violations)
+    assert not violations, (
+        f"{package}/ must not import {sorted(forbidden)}:\n" + "\n".join(violations)
+    )
 
 
 def test_main_runs():
