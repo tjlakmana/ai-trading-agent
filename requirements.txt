@@ -1,0 +1,2 @@
+# Only what is used at this stage. Add dependencies as components are built.
+pytest>=8.0
