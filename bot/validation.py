@@ -12,16 +12,12 @@ this ticker before a SELL?") are separate, later steps that decide approval.
 """
 
 import math
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from numbers import Real
 
 from core.proposal import Action, TradeProposal
-
-# Uppercase symbol, 1-10 chars: letters/digits, optionally "." or "-" (e.g. BRK.B, BF-B).
-TICKER_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*([.\-][A-Z0-9]+)?$")
-MAX_TICKER_LENGTH = 10
+from core.symbols import MAX_TICKER_LENGTH, TICKER_PATTERN
 
 
 @dataclass(frozen=True)

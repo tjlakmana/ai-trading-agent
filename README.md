@@ -1,57 +1,90 @@
 # Hybrid AI Trading System
 
-An educational and research project combining an AI reasoning agent (Claude) with a deterministic, rule-enforcing trading bot.
+An educational and research project combining a deterministic trading strategy, an AI assistant (Claude) for contextual interpretation, and a deterministic, rule-enforcing trading bot.
 
 > **PAPER TRADING ONLY.** This project does not and will not execute live-money trades in its current phase. It is not financial advice.
 
 ## Design Principle
 
-> **The agent thinks. The bot controls and executes.**
+> **AI INTERPRETS. STRATEGY DECIDES THE SETUP. BOT CONTROLS THE RISK. EXECUTION EXECUTES.**
 
-Claude analyzes information and *proposes* trades. Deterministic Python code decides whether a proposal is allowed and whether it is executed. No LLM sits in the path that enforces risk controls.
+- **AI (Claude) interprets** context: it reads news, classifies catalysts, and explains why something may matter. It never decides whether a numerical threshold passed, never sets a position size, and never executes.
+- **The strategy decides the setup.** Deterministic Python detects in-play stocks and entry conditions, and eventually creates the `TradeProposal`.
+- **The bot controls the risk.** Deterministic validation and risk rules approve or reject every proposal. No LLM is involved.
+- **Execution executes** only what the bot approved (paper trading only).
 
 ## Architecture
 
 ```
- Market Data / TradingView ─┐
- News & Sentiment ──────────┤
- Portfolio State ───────────┼──►  AI TRADING AGENT (Claude)
- Trade Memory (read) ───────┘              │
-                                           ▼
-                                Structured Trade Proposal
+ Market Data ──────────────►  Deterministic In-Play Filter        (strategy/)  ✔ V1
+ News ──► AI interprets ──┐                │
+   (catalyst, context)    └──────►  Deterministic Momentum Impulse Detector    ☐
                                            │
+                                    Deterministic Micro-Pullback Detector      ☐
+                                           │
+                                    Deterministic Entry Trigger                ☐
+                                           │
+                                     TradeProposal
  ══════════════════════ trust boundary ════╪═════════════════════
                                            ▼
-                                  TRADING BOT (deterministic)
-                                    ├─ Proposal validation
-                                    ├─ Risk manager
-                                    └─ Position sizing
+                                  TRADING BOT (deterministic)      (bot/)
+                                    ├─ Structural validation                   ✔
+                                    └─ Risk manager + position sizing          ✔
                                            │
-                               Approved? ──┴── Rejected → recorded
-                                   │
-                                   ▼
-                          Paper Trading Execution
-                                   │
-                                   ▼
-                     Trade Result → Trade Memory (write)
-                                   │
-                                   └──► available to the agent for future analysis
+                     APPROVE ──────────────┼──── REJECT / NO_ACTION → recorded
+                        │
+                        ▼
+              Paper Trading Execution      (execution/)                        ☐
+                        │
+                        ▼
+          Trade Result → Trade Memory      (memory/)                           ☐
 ```
 
-A proposal is only data. The agent cannot call the broker, change risk limits, disable the risk manager, override a rejection, change sizing rules, or switch to live trading. Those capabilities exist only on the bot side of the boundary.
+AI output is an *input* (for example, a classified `Catalyst` with its source recorded). Deterministic code always makes the decisions. Nothing upstream of the bot can call the broker, change risk limits, disable the risk manager, override a rejection, change sizing rules, or switch to live trading.
 
 ## Components
 
 | Package | Role | Eventually does |
 |---|---|---|
-| `core/` | Contract | Data-only types shared by agent and bot (`TradeProposal`, `Action`, `Position`, `AccountState`). No logic. |
-| `agent/` | **Thinks** | Gathers context, prompts Claude, returns a structured proposal (ticker, action, confidence, entry, stop loss, take profit, reasoning). Never executes. |
-| `bot/` | **Controls** | Validates proposals, enforces stop-loss, exposure, and daily-loss rules, sizes positions, approves or rejects, and forwards approved orders to execution. Deterministic Python only. |
+| `core/` | Contracts | Data-only types and constants: `TradeProposal`, `Position`, `AccountState`, `ScannerSnapshot`, `Catalyst`, ticker format. No logic. |
+| `strategy/` | **Decides the setup** | Deterministic in-play filter, then momentum impulse, micro-pullback, and entry trigger. It eventually creates the `TradeProposal`. Never executes. |
+| `agent/` | **Interprets** | Claude reads news, classifies catalysts, and summarizes context. It supplies inputs to the strategy and decides nothing. |
+| `bot/` | **Controls the risk** | Validates proposals, enforces stop-loss, exposure and daily-loss rules, sizes positions, and approves or rejects. Deterministic Python only. |
 | `execution/` | **Executes** | Broker interface with a paper-trading implementation. Called only by the bot. |
-| `data/` | Inputs | Market data, TradingView (via MCP), indicators, news, sentiment. |
-| `strategy/` | Ideas | Named strategies and analysis templates, so performance can be tracked per strategy. |
-| `memory/` | Audit trail | External, auditable store of every proposal, decision, and outcome. The bot writes, the agent reads. Claude does not "learn"; past trades are retrieved explicitly. |
+| `data/` | Inputs | Market data, TradingView (via MCP), indicators, news. Produces `ScannerSnapshot`s. |
+| `memory/` | Audit trail | External, auditable store of every scan, proposal, decision and outcome. Claude does not "learn"; past trades are retrieved explicitly. |
 | `tests/` | Safety net | Unit tests plus architecture tests that enforce the boundaries above. |
+
+## Strategy: in-play filter (V1)
+
+An **experimental, Ross Cameron-inspired small-cap momentum** hypothesis. It does **not** claim to reproduce Ross Cameron's exact rules. Every threshold is a Version 1 development hypothesis that we expect to change after backtesting and paper trading.
+
+`strategy.in_play.evaluate_in_play(snapshot, config)` turns a raw `ScannerSnapshot` into an `InPlayResult`. That result contains:
+- `qualified`
+- `reasons` and `warnings`
+- one entry per check, with the actual value and the threshold
+- the calculated metrics
+- the **unchanged raw snapshot** and the config used
+
+`evaluate_universe` does the same for a list of stocks and keeps every result, failures included.
+
+Each criterion has a **level**: HARD (must pass; missing data fails), PREFERRED (a warning only), or OFF. Moving a criterion between levels is a config change in `strategy/in_play_config.py`, never a code change.
+
+| Criterion | V1 level | V1 experimental default |
+|---|---|---|
+| Price | HARD | $2.00 – $20.00 |
+| % change from previous close | HARD | ≥ +10% |
+| Volume vs average daily volume | HARD / PREFERRED | ≥ 3× / ≥ 5× |
+| Float | HARD / PREFERRED | ≤ 20M / ≤ 10M shares |
+| Catalyst present | PREFERRED | (no news source yet) |
+| Room to daily resistance | PREFERRED | ≥ 20% (placeholder hypothesis) |
+| Gap %, premarket volume, cumulative volume | Raw research | recorded only |
+
+**`volume_vs_avg_daily` is not conventional relative volume (RVOL).** It divides *partial* session volume by an average *full-day* volume, so it can substantially understate unusual volume early in the session. A separate, time-of-day-adjusted `relative_volume_tod` will be added once intraday volume history exists.
+
+**"Qualified" only means a stock moves on to the momentum-impulse stage.** It is not a trade signal.
+
+## Bot: validation and risk (V1)
 
 Version 1 is **long-only**:
 
@@ -61,8 +94,6 @@ Version 1 is **long-only**:
 - Proposals never contain quantities; the bot decides size.
 
 The bot works in two stages: **structural validation** (is the proposal well-formed?) and then **risk approval** (is it allowed?). Passing validation does not mean a trade is approved.
-
-### Risk manager (V1)
 
 `bot.risk.evaluate(proposal, account, config)` returns a `RiskDecision`: **APPROVE**, **REJECT** or **NO_ACTION** (for HOLD). It includes the quantity, the reasons and a full sizing breakdown. Only APPROVE can ever reach execution.
 
@@ -74,17 +105,7 @@ The bot works in two stages: **structural validation** (is the proposal well-for
 - **SELL:** closes the entire existing long position. It is allowed even after the daily limit is reached. With no position, it is rejected.
 - **HOLD:** returns NO_ACTION and is never executed.
 
-The 1% / 20% / 3% limits are **development and testing defaults only, not recommendations for real-money trading.** They are set in `bot/risk_config.py`, which the agent cannot access.
-
-### Example proposal
-
-```
-Ticker: NVDA      Action: BUY       Confidence: 0.84
-Entry: 185.00     Stop Loss: 179.00 Take Profit: 197.00
-Reasoning: Positive sentiment, bullish trend, and increasing volume.
-```
-
-The bot may still reject this. For example, it could exceed exposure limits, the stop could be too wide, or the daily loss limit could already be reached.
+The 1% / 20% / 3% limits are **development and testing defaults only, not recommendations for real-money trading.** They are set in `bot/risk_config.py`, which neither the agent nor the strategy can import.
 
 ## Getting Started
 
@@ -103,11 +124,15 @@ pytest                  # runs tests
 - [x] Project foundation and architecture boundaries
 - [x] Trade proposal schema (`core/proposal.py`) and structural validation (`bot/validation.py`)
 - [x] Deterministic risk manager and position sizing (`bot/risk.py`)
+- [x] Strategy layer 1: deterministic in-play filter (`strategy/in_play.py`)
+- [ ] Strategy layer 2: momentum impulse detector
+- [ ] Strategy layer 3: micro-pullback detector
+- [ ] Strategy layer 4: entry trigger and `TradeProposal` creation
 - [ ] Paper execution (simulated, then paper broker API)
 - [ ] Trade memory (SQLite)
-- [ ] Claude agent integration
 - [ ] Market data, indicators, TradingView via MCP
-- [ ] News and sentiment
+- [ ] News integration and AI catalyst interpretation
+- [ ] Time-of-day relative volume (`relative_volume_tod`)
 - [ ] Backtesting, analytics, dashboard
 
 Each component is built and tested independently before it is wired in.

@@ -1,4 +1,4 @@
-"""Trade proposal contract: the only thing the agent hands to the bot.
+"""Trade proposal contract: the only thing the strategy hands to the bot.
 
 Data only. A TradeProposal is a *request*; nothing here decides whether it is
 valid or allowed. That is the bot's job (see bot/validation.py).

@@ -11,7 +11,7 @@ COMPONENTS = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
 
 def main() -> int:
     print("Hybrid AI Trading System - PAPER TRADING ONLY")
-    print("The agent thinks. The bot controls and executes.")
+    print("AI interprets. Strategy decides the setup. Bot controls the risk. Execution executes.")
     for name in COMPONENTS:
         __import__(name)
         print(f"  [ok] {name} (not implemented yet)")

@@ -1,11 +1,12 @@
-"""AI Trading Agent: the reasoning layer ("the agent thinks").
+"""AI agent: the interpretation layer ("AI interprets").
 
-Eventually: gathers context (market data, indicators, news, sentiment,
-portfolio state, relevant past trades from memory), asks Claude to analyze
-it, and returns a structured trade proposal.
+Eventually: Claude reads news, classifies catalysts (into core.market.Catalyst,
+with its source recorded), summarizes why news may matter, and writes
+contextual explanations.
 
 Boundary rules:
-- Produces proposals only. Never executes trades.
+- Interprets only. Never decides whether a numerical strategy threshold passed,
+  never sets position size, never creates approvals, never executes.
 - Must never import from `bot` or `execution` (enforced by tests/test_architecture.py).
 - Has no access to risk limits, position sizing, or trading mode.
 """

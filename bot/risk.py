@@ -35,9 +35,10 @@ from dataclasses import dataclass
 from enum import Enum
 
 from bot.risk_config import RiskConfig
-from bot.validation import MAX_TICKER_LENGTH, TICKER_PATTERN, is_number, validate_proposal
+from bot.validation import is_number, validate_proposal
 from core.portfolio import AccountState, Position
 from core.proposal import Action, TradeProposal
+from core.symbols import MAX_TICKER_LENGTH, TICKER_PATTERN
 
 # Relative tolerance for float noise, e.g. 1000 / (1.3 - 1.2) = 9999.99999999999.
 TOLERANCE = 1e-9

@@ -13,10 +13,13 @@ PACKAGES = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
 
 # Package -> project packages it must never import.
 FORBIDDEN_IMPORTS = {
-    # The agent proposes; it must never reach the bot's internals or the broker.
+    # The agent interprets; it must never reach the bot's internals or the broker.
     "agent": {"bot", "execution"},
     # The bot controls; it must not depend on the agent or on any LLM SDK.
     "bot": {"agent", "anthropic"},
+    # The strategy decides setups deterministically: no risk/execution internals,
+    # no agent, and no LLM SDK deciding whether numeric thresholds passed.
+    "strategy": {"bot", "execution", "agent", "anthropic"},
     # core is the neutral contract; it must not depend on any other project code.
     "core": set(PACKAGES) - {"core"} | {"main", "tests"},
 }
@@ -49,6 +52,13 @@ def test_forbidden_imports(package):
     assert not violations, (
         f"{package}/ must not import {sorted(forbidden)}:\n" + "\n".join(violations)
     )
+
+
+def test_ticker_constants_live_in_core_and_are_shared():
+    symbols = importlib.import_module("core.symbols")
+    validation = importlib.import_module("bot.validation")
+    assert validation.TICKER_PATTERN is symbols.TICKER_PATTERN
+    assert validation.MAX_TICKER_LENGTH == symbols.MAX_TICKER_LENGTH == 10
 
 
 def test_main_runs():
