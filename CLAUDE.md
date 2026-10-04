@@ -20,7 +20,7 @@ Hybrid AI trading system for education and research. Read README.md for the arch
 |---|---|---|
 | `core/` | stdlib only | any other project package |
 | `agent/` | `core`, `data`, `strategy`, `memory` (read) | `bot`, `execution` |
-| `bot/` | `core`, `execution`, `memory`, `data` | `agent` |
+| `bot/` | `core`, `execution`, `memory`, `data` | `agent`, `anthropic` (no LLM SDKs) |
 | `execution/` | `core`, stdlib / broker SDK | `agent`, `bot` |
 | `data/`, `strategy/`, `memory/` | `core`, each other as needed | `bot`, `execution` |
 
@@ -36,7 +36,24 @@ Hybrid AI trading system for education and research. Read README.md for the arch
 
 ## Validity is not approval
 
-`ValidationResult.is_valid` means only that a proposal is structurally well-formed. It must never be treated as approval to execute. Approval is a separate, later decision made by the deterministic risk manager. Never send an order to `execution/` based on `is_valid` alone.
+`ValidationResult.is_valid` means only that a proposal is structurally well-formed. It must never be treated as approval to execute. Approval is a separate decision made by the deterministic risk manager. Never send an order to `execution/` based on `is_valid` alone.
+
+## Risk manager (`bot/risk.py`)
+
+- **`evaluate(proposal, account, config)` is the only entry point.** It runs structural validation itself, so invalid proposals can never be evaluated as if they were valid.
+- **It returns a `RiskDecision`:** `APPROVE`, `REJECT` or `NO_ACTION` (for HOLD). **Only `Decision.APPROVE` may ever reach execution.**
+- **The bot alone decides quantity.** Proposals carry no size, and agent confidence must not affect sizing or approval.
+- **Account state (`core/portfolio.py`) comes from the bot's source of truth,** never from the agent. Bad account data is rejected (fail closed).
+- **BUY sizing:** `quantity = min(qty_by_risk, qty_by_exposure, qty_by_cash)`, in whole shares, rounded down with a relative tolerance of 1e-9. The formulas are in the module docstring.
+- **Daily loss:**
+  - `daily_loss = max(0, start_of_day_equity - equity)`, which includes open losses.
+  - When the daily limit is reached, every BUY is rejected.
+  - The remaining daily allowance also caps each BUY's risk budget.
+  - **Profits never enlarge the daily allowance.**
+- **Per-trade risk** is `min(equity, start_of_day_equity) × max_risk_per_trade_pct`. Intraday profits never increase it, and intraday losses reduce it.
+- **SELL** approves closing the entire existing long position. It is never blocked by the daily-loss limit, because exiting reduces exposure. With no position, it is rejected, so short selling is impossible.
+- **`RiskConfig` (`bot/risk_config.py`)** is defined in code and owned by the bot. Never read it from agent output, a proposal or environment variables.
+- **Development defaults (1% risk per trade, 20% max position, 3% max daily loss) are for development and testing only.** They are not recommendations for real-money trading. Do not present them as such.
 
 ## Development workflow
 

@@ -44,7 +44,7 @@ A proposal is only data. The agent cannot call the broker, change risk limits, d
 
 | Package | Role | Eventually does |
 |---|---|---|
-| `core/` | Contract | Data-only types shared by agent and bot (`TradeProposal`, `Action`). No logic. |
+| `core/` | Contract | Data-only types shared by agent and bot (`TradeProposal`, `Action`, `Position`, `AccountState`). No logic. |
 | `agent/` | **Thinks** | Gathers context, prompts Claude, returns a structured proposal (ticker, action, confidence, entry, stop loss, take profit, reasoning). Never executes. |
 | `bot/` | **Controls** | Validates proposals, enforces stop-loss, exposure, and daily-loss rules, sizes positions, approves or rejects, and forwards approved orders to execution. Deterministic Python only. |
 | `execution/` | **Executes** | Broker interface with a paper-trading implementation. Called only by the bot. |
@@ -61,6 +61,20 @@ Version 1 is **long-only**:
 - Proposals never contain quantities; the bot decides size.
 
 The bot works in two stages: **structural validation** (is the proposal well-formed?) and then **risk approval** (is it allowed?). Passing validation does not mean a trade is approved.
+
+### Risk manager (V1)
+
+`bot.risk.evaluate(proposal, account, config)` returns a `RiskDecision`: **APPROVE**, **REJECT** or **NO_ACTION** (for HOLD). It includes the quantity, the reasons and a full sizing breakdown. Only APPROVE can ever reach execution.
+
+- **BUY:** the bot sizes the position as the smallest of three limits:
+  - the risk budget, divided by the stop distance. The budget is 1% of the lower of current and start-of-day equity, further capped by the remaining daily-loss allowance.
+  - the room left under the per-ticker exposure cap (20% of equity)
+  - the available cash
+- **Daily loss:** once equity falls 3% below start-of-day equity, new BUYs stop. Gains earlier in the day never enlarge this allowance or the per-trade risk.
+- **SELL:** closes the entire existing long position. It is allowed even after the daily limit is reached. With no position, it is rejected.
+- **HOLD:** returns NO_ACTION and is never executed.
+
+The 1% / 20% / 3% limits are **development and testing defaults only, not recommendations for real-money trading.** They are set in `bot/risk_config.py`, which the agent cannot access.
 
 ### Example proposal
 
@@ -88,7 +102,7 @@ pytest                  # runs tests
 
 - [x] Project foundation and architecture boundaries
 - [x] Trade proposal schema (`core/proposal.py`) and structural validation (`bot/validation.py`)
-- [ ] Deterministic risk manager and position sizing
+- [x] Deterministic risk manager and position sizing (`bot/risk.py`)
 - [ ] Paper execution (simulated, then paper broker API)
 - [ ] Trade memory (SQLite)
 - [ ] Claude agent integration

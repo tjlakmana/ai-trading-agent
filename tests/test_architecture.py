@@ -15,6 +15,8 @@ PACKAGES = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
 FORBIDDEN_IMPORTS = {
     # The agent proposes; it must never reach the bot's internals or the broker.
     "agent": {"bot", "execution"},
+    # The bot controls; it must not depend on the agent or on any LLM SDK.
+    "bot": {"agent", "anthropic"},
     # core is the neutral contract; it must not depend on any other project code.
     "core": set(PACKAGES) - {"core"} | {"main", "tests"},
 }

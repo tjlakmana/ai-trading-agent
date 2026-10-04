@@ -38,14 +38,14 @@ class ValidationResult:
         return not self.errors
 
 
-def _is_number(value) -> bool:
+def is_number(value) -> bool:
     # bool is a subclass of int; True/False are never valid numbers here.
     return isinstance(value, Real) and not isinstance(value, bool)
 
 
 def _check_price(name: str, value, errors: list[str]) -> bool:
     """Append an error if value is not a finite positive number. Returns True if valid."""
-    if not _is_number(value):
+    if not is_number(value):
         errors.append(f"{name} must be a number, got {type(value).__name__}")
         return False
     if not math.isfinite(value):
@@ -69,7 +69,7 @@ def _validate_common(p: TradeProposal, errors: list[str]) -> None:
     if not isinstance(p.action, Action):
         errors.append(f"action must be one of {[a.value for a in Action]}")
 
-    if not _is_number(p.confidence):
+    if not is_number(p.confidence):
         errors.append("confidence must be a number")
     elif not math.isfinite(p.confidence) or not 0 <= p.confidence <= 1:
         errors.append("confidence must be between 0 and 1")
