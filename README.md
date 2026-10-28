@@ -52,7 +52,7 @@ AI output is an *input* (for example, a classified `Catalyst` with its source re
 | `bot/` | **Controls the risk** | Validates proposals, enforces stop-loss, exposure and daily-loss rules, sizes positions, and approves or rejects. Deterministic Python only. |
 | `execution/` | **Executes** | Broker interface with a paper-trading implementation. Called only by the bot. |
 | `data/` | Inputs | Finviz Elite discovery (implemented), later a real-time intraday feed, TradingView (via MCP), indicators, news. Produces `ScannerSnapshot`s. |
-| `memory/` | Audit trail | External, auditable store of every scan, proposal, decision and outcome. Claude does not "learn"; past trades are retrieved explicitly. |
+| `memory/` | Audit trail | External, auditable store. Scanner history is implemented; proposals, decisions and outcomes come later. Claude does not "learn"; history is retrieved explicitly. |
 | `tests/` | Safety net | Unit tests plus architecture tests that enforce the boundaries above. |
 
 ## Strategy: in-play filter (V1)
@@ -112,12 +112,57 @@ FinvizScreenConfig ─► FinvizClient ─► parse_screener_csv ─► ScannerS
   - Requests time out after 10 s.
 - **Secrets:** the key is read from `FINVIZ_API_KEY`. The process environment is checked first, then `.env`. Finviz requires the key in the query string, so it is kept out of exceptions, `repr` and logs, and `urllib3`'s debug log is redacted.
 
-Manual scan (research only; it places no orders):
+**Discovery profiles** (`data/finviz/profiles.py`), V1 hypotheses:
+
+| Profile | Finviz filters | Typical size |
+|---|---|---|
+| `strict_v1` (default) | `sh_price_2to20, sh_relvol_o2, sh_curvol_o500, sh_float_u20, ta_change_u` | about 10 stocks |
+| `broad_v1` | `sh_price_2to20, ta_change_u` | about 1,100 stocks |
+
+The in-play filter evaluates every returned stock with the same rules, whichever profile was used.
+
+Manual scan (research only; it places no orders). Each attempt, successful or failed, is recorded in scanner history unless you pass `--no-record`:
 
 ```bash
-python -m data.finviz                 # default discovery screen + in-play filter (min volume 500,000)
-python -m data.finviz --show-all      # also list stocks that did not qualify, with reasons
-python -m data.finviz --tickers AAPL,TSLA --min-volume 0
+python -m data.finviz                          # strict_v1 + in-play filter (min volume 500,000)
+python -m data.finviz --profile broad_v1       # broad discovery, strictly filtered
+python -m data.finviz --show-near-miss         # also list near-misses
+python -m data.finviz --show-all               # also list every non-qualified stock, with reasons
+python -m data.finviz --tickers AAPL,TSLA --min-volume 0 --no-record
+```
+
+## Memory: scanner history (V1)
+
+`memory/scan_store.py` keeps an **append-only SQLite** history at `MEMORY_DB_PATH`. The default is `runtime/memory.db`, which is gitignored and kept separate from `TRADE_DB_PATH`.
+
+- **`scan_runs`** has one row per attempt, successful (`OK`) or failed (`ERROR`). Each row records:
+  - the original screen and in-play configs
+  - `started_at`, `fetched_at` and the session
+  - `quote_freshness = UNKNOWN`
+  - counts per class
+  - for failed attempts, the error type and its key-safe message
+- **`scan_rows`** is a small index with one row per stock per run, holding its class and key numbers (our own calculations).
+- **`scan_payloads`** is the complete audit copy, stored as gzip-compressed JSON. It holds every raw Finviz row, the vendor metrics, normalization errors and warnings, the snapshot, and every check result. The SHA-256 of each payload is stored with its run and verified on every load.
+- **Classes** (`memory/classification.py`) are a read-side view that never changes the strategy:
+
+  | Class | Meaning |
+  |---|---|
+  | `QUALIFIED` | every HARD check passed |
+  | `NEAR_MISS` | exactly one HARD check did not pass |
+  | `FILTERED_OUT` | everything else, including invalid data |
+  | `REJECTED` | a row that could not be normalized |
+
+  A near-miss is not a trade signal.
+- **Append-only:** triggers abort every `UPDATE` and `DELETE`. There is no retention or pruning yet.
+- **Replay:** the in-play filter re-runs deterministically on stored snapshots, with the original or a modified `InPlayConfig`. Replays are never written back.
+- **No secrets are stored.** Any `auth=<value>` text is redacted before writing, and tests check the database bytes for the key.
+- **Manual only:** each `record_*` call is a single transaction, so an automatic scan every 5 minutes can be added later without changing the store. No background scanning runs yet.
+
+```bash
+python -m memory runs                              # recent attempts, successes and failures
+python -m memory show <run>  [--status NEAR_MISS]  # one run (unique id prefix, at least 6 characters)
+python -m memory ticker ULBI                       # every observation of a stock
+python -m memory replay <run> --set min_pct_change=0.2 --set max_float_shares=10000000
 ```
 
 **What Finviz cannot provide:**
@@ -175,6 +220,8 @@ python -m data.finviz   # manual Finviz in-play scan (needs FINVIZ_API_KEY in .e
 - [ ] Strategy layer 3: micro-pullback detector
 - [ ] Strategy layer 4: entry trigger and `TradeProposal` creation
 - [ ] Paper execution (simulated, then paper broker API)
+- [x] Scanner history in memory (append-only SQLite, replayable)
+- [ ] Automatic scans every 5 minutes (designed for, not enabled)
 - [ ] Trade memory (SQLite)
 - [x] Finviz Elite discovery provider (`data/finviz/`) feeding the in-play filter
 - [ ] Real-time intraday market data feed (required for high-of-day / breakout triggers)

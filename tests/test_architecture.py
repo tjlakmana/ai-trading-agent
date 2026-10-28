@@ -22,6 +22,8 @@ FORBIDDEN_IMPORTS = {
     "strategy": {"bot", "execution", "agent", "anthropic"},
     # Data adapters only supply inputs: they never reach risk/execution, the agent, or an LLM SDK.
     "data": {"bot", "execution", "agent", "anthropic"},
+    # Memory is an audit store: it records and replays, it never trades or calls an LLM.
+    "memory": {"bot", "execution", "agent", "anthropic"},
     # core is the neutral contract; it must not depend on any other project code.
     "core": set(PACKAGES) - {"core"} | {"main", "tests"},
 }
