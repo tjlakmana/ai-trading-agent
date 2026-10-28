@@ -215,6 +215,53 @@ def test_missing_average_volume_fails_closed(avg):
     assert any("unknown" in reason for reason in r.reasons)
 
 
+# --- HARD (optional): minimum cumulative volume by session -------------------
+
+VOLUME_CONFIG = InPlayConfig(min_cumulative_volume=500_000, min_premarket_cumulative_volume=100_000)
+
+
+def test_session_volume_checks_absent_by_default():
+    names = check_names(evaluate_in_play(snap(), CONFIG)) | check_names(
+        evaluate_in_play(snap(open_price=None), CONFIG))
+    assert "min_cumulative_volume" not in names
+    assert "min_premarket_cumulative_volume" not in names
+
+
+@pytest.mark.parametrize("volume, ok", [(500_000, True), (499_999, False)])
+def test_regular_session_volume_boundary(volume, ok):
+    r = evaluate_in_play(snap(cumulative_volume=volume, average_daily_volume=50_000.0), VOLUME_CONFIG)
+    assert r.qualified is ok
+    c = check(r, "min_cumulative_volume")
+    assert c.level is Level.HARD
+    assert c.status is (CheckStatus.PASS if ok else CheckStatus.FAIL)
+    assert (c.actual, c.threshold) == (volume, 500_000)
+
+
+@pytest.mark.parametrize("volume, ok", [(100_000, True), (99_999, False)])
+def test_premarket_volume_boundary(volume, ok):
+    s = snap(open_price=None, cumulative_volume=volume, average_daily_volume=10_000.0)
+    r = evaluate_in_play(s, VOLUME_CONFIG)
+    assert r.qualified is ok
+    assert check(r, "min_premarket_cumulative_volume").status is (CheckStatus.PASS if ok else CheckStatus.FAIL)
+
+
+def test_only_the_matching_session_threshold_applies():
+    regular = check_names(evaluate_in_play(snap(), VOLUME_CONFIG))
+    premarket = check_names(evaluate_in_play(snap(open_price=None), VOLUME_CONFIG))
+    assert "min_cumulative_volume" in regular and "min_premarket_cumulative_volume" not in regular
+    assert "min_premarket_cumulative_volume" in premarket and "min_cumulative_volume" not in premarket
+
+
+def test_premarket_threshold_alone_leaves_regular_session_unchecked():
+    config = InPlayConfig(min_premarket_cumulative_volume=100_000)
+    assert "min_cumulative_volume" not in check_names(evaluate_in_play(snap(), config))
+
+
+def test_session_volume_failure_message():
+    r = evaluate_in_play(snap(cumulative_volume=400_000, average_daily_volume=40_000.0), VOLUME_CONFIG)
+    assert "session volume 400,000 < min 500,000" in r.reasons
+
+
 # --- HARD: float -------------------------------------------------------------
 
 

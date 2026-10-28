@@ -16,6 +16,10 @@ Derived metrics:
     volume_vs_avg_daily    = cumulative_volume / average_daily_volume          (None if avg missing/0)
     room_to_resistance_pct = (daily_resistance - price) / price                (None if unknown/none)
 
+Optional session-volume check (disabled unless configured): cumulative_volume
+is compared with min_premarket_cumulative_volume when open_price is None
+(before the regular-session open), otherwise with min_cumulative_volume.
+
 volume_vs_avg_daily is NOT conventional time-of-day relative volume (RVOL).
 It compares PARTIAL session volume to an average FULL-DAY volume, so it can
 substantially understate unusual volume early in the session. A separate
@@ -243,6 +247,12 @@ def _build_checks(s: ScannerSnapshot, m: InPlayMetrics, c: InPlayConfig) -> list
     add("min_pct_change", hard, m.pct_change, c.min_pct_change, "pct", "% change", True)
     add("min_volume_vs_avg_daily", hard, m.volume_vs_avg_daily, c.min_volume_vs_avg_daily,
         "ratio", "volume vs avg daily", True)
+    if s.open_price is None:  # before the regular-session open
+        add("min_premarket_cumulative_volume", hard, s.cumulative_volume,
+            c.min_premarket_cumulative_volume, "shares", "premarket volume", True)
+    else:
+        add("min_cumulative_volume", hard, s.cumulative_volume, c.min_cumulative_volume,
+            "shares", "session volume", True)
     add("max_float_shares", hard, s.float_shares, c.max_float_shares, "shares", "float", False)
     add("preferred_max_float_shares", pref, s.float_shares, c.preferred_max_float_shares,
         "shares", "float", False)

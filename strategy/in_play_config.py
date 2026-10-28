@@ -51,6 +51,11 @@ class InPlayConfig:
     # Minimum cumulative volume / average FULL-DAY volume. Not time-of-day RVOL.
     min_volume_vs_avg_daily: float | None = 3.0
     max_float_shares: int | None = 20_000_000
+    # Minimum session volume so far, in shares. Disabled (None) by default.
+    # Which one applies follows ScannerSnapshot: open_price None means the
+    # snapshot is from before the regular-session open (premarket).
+    min_cumulative_volume: int | None = None  # regular session (open_price set)
+    min_premarket_cumulative_volume: int | None = None  # premarket (open_price None)
 
     # --- PREFERRED (V1 experimental) ---
     preferred_max_float_shares: int | None = 10_000_000
@@ -78,7 +83,8 @@ class InPlayConfig:
             raise ValueError(
                 f"min_room_to_resistance_pct must be a positive number, got {self.min_room_to_resistance_pct!r}"
             )
-        for name in ("max_float_shares", "preferred_max_float_shares"):
+        for name in ("max_float_shares", "preferred_max_float_shares",
+                     "min_cumulative_volume", "min_premarket_cumulative_volume"):
             value = getattr(self, name)
             if value is not None and not _is_positive_int(value):
                 raise ValueError(f"{name} must be a positive whole number or None, got {value!r}")

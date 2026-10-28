@@ -51,7 +51,7 @@ AI output is an *input* (for example, a classified `Catalyst` with its source re
 | `agent/` | **Interprets** | Claude reads news, classifies catalysts, and summarizes context. It supplies inputs to the strategy and decides nothing. |
 | `bot/` | **Controls the risk** | Validates proposals, enforces stop-loss, exposure and daily-loss rules, sizes positions, and approves or rejects. Deterministic Python only. |
 | `execution/` | **Executes** | Broker interface with a paper-trading implementation. Called only by the bot. |
-| `data/` | Inputs | Market data, TradingView (via MCP), indicators, news. Produces `ScannerSnapshot`s. |
+| `data/` | Inputs | Finviz Elite discovery (implemented), later a real-time intraday feed, TradingView (via MCP), indicators, news. Produces `ScannerSnapshot`s. |
 | `memory/` | Audit trail | External, auditable store of every scan, proposal, decision and outcome. Claude does not "learn"; past trades are retrieved explicitly. |
 | `tests/` | Safety net | Unit tests plus architecture tests that enforce the boundaries above. |
 
@@ -78,11 +78,56 @@ Each criterion has a **level**: HARD (must pass; missing data fails), PREFERRED 
 | Float | HARD / PREFERRED | ≤ 20M / ≤ 10M shares |
 | Catalyst present | PREFERRED | (no news source yet) |
 | Room to daily resistance | PREFERRED | ≥ 20% (placeholder hypothesis) |
-| Gap %, premarket volume, cumulative volume | Raw research | recorded only |
+| Minimum cumulative volume | HARD when set | off by default; separate regular-session and premarket thresholds |
+| Gap %, premarket volume | Raw research | recorded only |
+
+The minimum cumulative volume check uses `min_premarket_cumulative_volume` when `open_price` is `None` (before the regular-session open) and `min_cumulative_volume` otherwise. Both are `None` (disabled) by default.
 
 **`volume_vs_avg_daily` is not conventional relative volume (RVOL).** It divides *partial* session volume by an average *full-day* volume, so it can substantially understate unusual volume early in the session. A separate, time-of-day-adjusted `relative_volume_tod` will be added once intraday volume history exists.
 
 **"Qualified" only means a stock moves on to the momentum-impulse stage.** It is not a trade signal.
+
+## Data: Finviz Elite discovery (V1)
+
+Finviz Elite's Screener API (`data/finviz/`) is used **for stock discovery only**. Its server-side filters narrow the market to a candidate list. Our in-play filter then re-evaluates every candidate from raw data.
+
+```
+FinvizScreenConfig ─► FinvizClient ─► parse_screener_csv ─► ScannerSnapshot ─► evaluate_universe ─► FinvizScan
+ (verified codes)      (HTTP, limits)   (units, missing data)                    (strategy/, deterministic)
+```
+
+- **Discovery screen (V1 starting hypothesis, not Warrior Trading's rules):** `sh_price_2to20`, `sh_relvol_o2`, `sh_curvol_o500`, `sh_float_u20`, `ta_change_u`.
+- **Only verified filter codes are accepted.** Finviz silently ignores unknown codes, so a typo would quietly widen the screen. New codes must be verified against a live response first (`data/finviz/schema.py`).
+- **Raw fields become `ScannerSnapshot` fields:**
+  - Price, Prev Close and Open are in dollars.
+  - Volume is in whole shares.
+  - Average Volume is in thousands, so it is multiplied by 1,000.
+  - Shares Float is in millions, so it is multiplied by 1,000,000.
+- **Finviz-calculated values are vendor data, never inputs to our checks.** These are Relative Volume, Change, Change from Open, Gap and Performance (1 min to 1 h). They are kept in `FinvizRecord.vendor`.
+- **Freshness:** Finviz provides no quote timestamp. `fetched_at` is recorded, `quote_time` is `None` and `quote_freshness` is `UNKNOWN`. `ScannerSnapshot.as_of` is set to `fetched_at`.
+- **Bad data:** a row missing Ticker, Price, Prev Close or Volume gets no snapshot. It is kept in `FinvizScan.rejected` with its reasons. An unexpected CSV header rejects the whole response.
+- **Limits:**
+  - Requests are paced client-side at 10 per rolling 5 seconds, which is Finviz Elite's limit.
+  - HTTP 429 is retried after `Retry-After`, a bounded number of times.
+  - Requests time out after 10 s.
+- **Secrets:** the key is read from `FINVIZ_API_KEY`. The process environment is checked first, then `.env`. Finviz requires the key in the query string, so it is kept out of exceptions, `repr` and logs, and `urllib3`'s debug log is redacted.
+
+Manual scan (research only; it places no orders):
+
+```bash
+python -m data.finviz                 # default discovery screen + in-play filter (min volume 500,000)
+python -m data.finviz --show-all      # also list stocks that did not qualify, with reasons
+python -m data.finviz --tickers AAPL,TSLA --min-volume 0
+```
+
+**What Finviz cannot provide:**
+- **No quote timestamps.**
+- **No premarket volume.**
+- **No 1-minute bars or ticks, and no streaming.**
+- **No halts, and no daily resistance levels.**
+- **Column behavior outside the regular session is unverified.** Every row fetched outside the regular session carries a warning.
+
+Polling gives snapshots, not events. Breakout and high-of-day triggers need a real-time intraday feed.
 
 ## Bot: validation and risk (V1)
 
@@ -116,7 +161,8 @@ pip install -r requirements.txt
 
 cp .env.example .env    # fill in locally; never commit .env
 python main.py          # prints foundation status
-pytest                  # runs tests
+pytest                  # runs tests (fully mocked: no network, never reads your .env)
+python -m data.finviz   # manual Finviz in-play scan (needs FINVIZ_API_KEY in .env)
 ```
 
 ## Status / Roadmap
@@ -130,7 +176,9 @@ pytest                  # runs tests
 - [ ] Strategy layer 4: entry trigger and `TradeProposal` creation
 - [ ] Paper execution (simulated, then paper broker API)
 - [ ] Trade memory (SQLite)
-- [ ] Market data, indicators, TradingView via MCP
+- [x] Finviz Elite discovery provider (`data/finviz/`) feeding the in-play filter
+- [ ] Real-time intraday market data feed (required for high-of-day / breakout triggers)
+- [ ] Indicators, TradingView via MCP
 - [ ] News integration and AI catalyst interpretation
 - [ ] Time-of-day relative volume (`relative_volume_tod`)
 - [ ] Backtesting, analytics, dashboard

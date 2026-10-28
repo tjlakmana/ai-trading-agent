@@ -10,7 +10,8 @@ from strategy.in_play_config import InPlayConfig, Level
 FRACTION_FIELDS = ("min_pct_change", "min_room_to_resistance_pct")
 PRICE_FIELDS = ("min_price", "max_price")
 RATIO_FIELDS = ("min_volume_vs_avg_daily", "preferred_volume_vs_avg_daily")
-SHARE_FIELDS = ("max_float_shares", "preferred_max_float_shares")
+VOLUME_FIELDS = ("min_cumulative_volume", "min_premarket_cumulative_volume")
+SHARE_FIELDS = ("max_float_shares", "preferred_max_float_shares") + VOLUME_FIELDS
 OPTIONAL_FIELDS = PRICE_FIELDS + RATIO_FIELDS + SHARE_FIELDS + ("min_pct_change",)
 
 
@@ -26,6 +27,17 @@ def test_v1_development_defaults():
     assert c.room_level is Level.PREFERRED
     assert c.min_room_to_resistance_pct == 0.20
     assert c.negative_catalyst_types == frozenset({CatalystType.OFFERING})
+
+
+def test_session_volume_thresholds_disabled_by_default():
+    c = InPlayConfig()
+    assert c.min_cumulative_volume is None
+    assert c.min_premarket_cumulative_volume is None
+
+
+def test_session_volume_thresholds_are_independent():
+    c = InPlayConfig(min_cumulative_volume=500_000, min_premarket_cumulative_volume=100_000)
+    assert (c.min_cumulative_volume, c.min_premarket_cumulative_volume) == (500_000, 100_000)
 
 
 def test_config_is_immutable():

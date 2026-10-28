@@ -1,2 +1,5 @@
 # Only what is used at this stage. Add dependencies as components are built.
 pytest>=8.0
+# Finviz Elite Screener API client (data/finviz/)
+requests>=2.32
+python-dotenv>=1.0
