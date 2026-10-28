@@ -120,6 +120,25 @@ def _retry_after_seconds(value: str | None) -> float:
     return min(max(seconds, 0.0), MAX_RETRY_AFTER_SECONDS)
 
 
+def _read_api_key(env_file: Path | None, environ: Mapping[str, str] | None) -> str | None:
+    """FINVIZ_API_KEY from the environment, else from env_file (None = project .env)."""
+    environ = os.environ if environ is None else environ
+    env_file = DEFAULT_ENV_FILE if env_file is None else env_file
+    key = environ.get(API_KEY_ENV_VAR)
+    if (not key or not key.strip()) and Path(env_file).is_file():
+        key = dotenv_values(env_file).get(API_KEY_ENV_VAR)
+    return key
+
+
+def api_key_configured(env_file: Path | None = None, environ: Mapping[str, str] | None = None) -> bool:
+    """True if a well-formed FINVIZ_API_KEY is available. Never returns or logs the key."""
+    try:
+        _validate_api_key(_read_api_key(env_file, environ))
+    except FinvizCredentialsError:
+        return False
+    return True
+
+
 def _validate_api_key(api_key) -> str:
     if not isinstance(api_key, str) or not api_key.strip():
         raise FinvizCredentialsError(f"{API_KEY_ENV_VAR} is not set (environment or .env)")
@@ -158,12 +177,7 @@ class FinvizClient:
         The process environment wins; otherwise the key is read from env_file
         (None means the project .env, DEFAULT_ENV_FILE). os.environ is not modified.
         """
-        environ = os.environ if environ is None else environ
-        env_file = DEFAULT_ENV_FILE if env_file is None else env_file
-        key = environ.get(API_KEY_ENV_VAR)
-        if (not key or not key.strip()) and env_file is not None and Path(env_file).is_file():
-            key = dotenv_values(env_file).get(API_KEY_ENV_VAR)
-        return cls(key, **kwargs)
+        return cls(_read_api_key(env_file, environ), **kwargs)
 
     def __repr__(self) -> str:
         return f"FinvizClient(api_key=***, timeout={self._timeout})"

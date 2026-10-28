@@ -29,7 +29,9 @@ import json
 import os
 import re
 import sqlite3
+import threading
 import uuid
+from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -117,6 +119,41 @@ BEGIN SELECT RAISE(ABORT, 'scanner history is append-only'); END;
 
 class HistoryIntegrityError(Exception):
     """A stored payload does not match its recorded SHA-256."""
+
+
+class PayloadCache:
+    """Thread-safe LRU cache of verified, decoded payloads.
+
+    Safe because history is append-only: a run's payload never changes.
+    Entries are keyed by (run_id, payload_sha256) and only added after the
+    hash has been verified. Share one instance across short-lived stores
+    (for example, one store per API request).
+    """
+
+    def __init__(self, max_runs: int = 4):
+        if not isinstance(max_runs, int) or max_runs < 1:
+            raise ValueError("max_runs must be a positive whole number")
+        self._max = max_runs
+        self._items: OrderedDict[tuple[str, str], dict] = OrderedDict()
+        self._lock = threading.Lock()
+
+    def get(self, key: tuple[str, str]) -> dict | None:
+        with self._lock:
+            value = self._items.get(key)
+            if value is not None:
+                self._items.move_to_end(key)
+            return value
+
+    def put(self, key: tuple[str, str], value: dict) -> None:
+        with self._lock:
+            self._items[key] = value
+            self._items.move_to_end(key)
+            while len(self._items) > self._max:
+                self._items.popitem(last=False)
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._items)
 
 
 @dataclass(frozen=True)
@@ -209,9 +246,11 @@ def default_db_path(env_file: Path | None = None, environ: Mapping[str, str] | N
 
 class ScanStore:
     def __init__(self, path: Path | str, *, read_only: bool = False,
-                 clock: Callable[[], datetime] = _utc_now):
+                 clock: Callable[[], datetime] = _utc_now,
+                 payload_cache: PayloadCache | None = None):
         self.path = Path(path)
         self._clock = clock
+        self._cache = payload_cache
         if read_only:
             if not self.path.is_file():
                 raise FileNotFoundError(f"no scanner history at {self.path}")
@@ -360,11 +399,33 @@ class ScanStore:
             raise KeyError(f"no unique scan run matches {prefix!r}")
         return rows[0]["run_id"]
 
-    def list_runs(self, limit: int = 20) -> tuple[RunSummary, ...]:
-        """Most recent first."""
-        rows = self._conn.execute("SELECT * FROM scan_runs ORDER BY started_at DESC, recorded_at DESC LIMIT ?",
-                                  (limit,)).fetchall()
+    def list_runs(self, limit: int = 20, *, profile: str | None = None, status: str | None = None,
+                  before: datetime | None = None) -> tuple[RunSummary, ...]:
+        """Most recent first, optionally filtered by profile, status (OK/ERROR) and start time."""
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 1000:
+            raise ValueError("limit must be a whole number from 1 to 1000")
+        clauses, args = [], []
+        if profile is not None:
+            clauses.append("profile_name = ?")
+            args.append(profile)
+        if status is not None:
+            if status not in ("OK", "ERROR"):
+                raise ValueError("status must be OK or ERROR")
+            clauses.append("status = ?")
+            args.append(status)
+        if before is not None:
+            clauses.append("started_at < ?")
+            args.append(_utc_text(before))
+        where = f"WHERE {' AND '.join(clauses)} " if clauses else ""
+        rows = self._conn.execute(
+            f"SELECT * FROM scan_runs {where}ORDER BY started_at DESC, recorded_at DESC LIMIT ?",
+            (*args, limit)).fetchall()
         return tuple(_run_summary(r) for r in rows)
+
+    def latest_run(self, profile: str | None = None) -> RunSummary | None:
+        """The most recent successful run (optionally for one profile), or None."""
+        runs = self.list_runs(1, profile=profile, status="OK")
+        return runs[0] if runs else None
 
     def get_run(self, run_id: str) -> RunSummary:
         row = self._conn.execute("SELECT * FROM scan_runs WHERE run_id = ?", (run_id,)).fetchone()
@@ -397,10 +458,34 @@ class ScanStore:
             raise HistoryIntegrityError(f"payload for scan run {run_id} is missing")
         if row["format_version"] != PAYLOAD_FORMAT_VERSION or row["encoding"] != PAYLOAD_ENCODING:
             raise ValueError(f"unsupported payload format {row['format_version']}/{row['encoding']}")
+        key = (run_id, run.payload_sha256)
+        if self._cache is not None:
+            cached = self._cache.get(key)
+            if cached is not None:
+                return cached
         canonical = gzip.decompress(row["payload"])
         if hashlib.sha256(canonical).hexdigest() != run.payload_sha256:
             raise HistoryIntegrityError(f"payload for scan run {run_id} does not match its SHA-256")
-        return json.loads(canonical)
+        payload = json.loads(canonical)
+        if self._cache is not None:
+            self._cache.put(key, payload)
+        return payload
+
+    def get_entry(self, run_id: str, row_number: int) -> dict:
+        """One stock's full audit entry from a run's payload.
+
+        Returns {"kind": "candidate", "record", "result", "classification"} or
+        {"kind": "rejected", "record"}. Raises KeyError if the row is not in the run.
+        Treat the returned dicts as read-only: they may be shared through the cache.
+        """
+        payload = self.load_payload(run_id)
+        for c in payload["candidates"]:
+            if c["record"]["row_number"] == row_number:
+                return {"kind": "candidate", **c}
+        for r in payload["rejected"]:
+            if r["row_number"] == row_number:
+                return {"kind": "rejected", "record": r}
+        raise KeyError(f"scan run {run_id} has no row {row_number}")
 
     def replay(self, run_id: str, in_play_config: InPlayConfig | None = None) -> tuple[ReplayItem, ...]:
         """Re-run the deterministic in-play filter on the stored snapshots.

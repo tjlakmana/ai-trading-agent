@@ -13,15 +13,14 @@ from datetime import datetime, timezone
 
 from data.finviz.client import FinvizClient
 from data.finviz.config import FinvizScreenConfig
-from data.finviz.errors import FinvizCredentialsError, FinvizError
-from data.finviz.profiles import CUSTOM_TICKERS, DEFAULT_PROFILE, PROFILES
-from data.finviz.scan import FinvizCandidate, FinvizScan, run_in_play_scan
+from data.finviz.errors import FinvizCredentialsError
+from data.finviz.profiles import CUSTOM_TICKERS, DEFAULT_MIN_VOLUME, DEFAULT_PROFILE, PROFILES
+from data.finviz.scan import FinvizCandidate, FinvizScan
 from data.market_hours import to_us_eastern
 from memory.classification import ScanClass, classify
+from memory.recording import run_and_record
 from memory.scan_store import ScanStore
 from strategy.in_play_config import InPlayConfig
-
-DEFAULT_MIN_VOLUME = 500_000  # V1 starting hypothesis, adjustable with --min-volume
 
 
 def _volume_threshold(text: str) -> int | None:
@@ -139,26 +138,22 @@ def main(argv: list[str] | None = None, *, client=None, clock=None, store: ScanS
     if own_store:
         store = ScanStore.open_default()
     try:
-        started_at = clock()
-        try:
-            client = FinvizClient.from_env() if client is None else client
-            scan = run_in_play_scan(client, screen, in_play, clock=clock)
-        except FinvizError as exc:
-            run_id = None
-            if store is not None and not args.no_record:
-                run_id = store.record_scan_failure(exc, screen, in_play, profile_name, started_at=started_at)
+        client_factory = FinvizClient.from_env if client is None else (lambda: client)
+        outcome = run_and_record(client_factory, screen, in_play, profile_name,
+                                 store=None if args.no_record else store, clock=clock)
+        if not outcome.ok:
+            exc = outcome.error
             hint = ". Add it to .env (see .env.example)" if isinstance(exc, FinvizCredentialsError) else ""
             print(f"error: {exc}{hint}", file=sys.stderr)
-            if run_id:
-                print(f"failed attempt recorded as run {run_id[:8]}", file=sys.stderr)
+            if outcome.run_id:
+                print(f"failed attempt recorded as run {outcome.run_id[:8]}", file=sys.stderr)
             return 2 if isinstance(exc, FinvizCredentialsError) else 1
 
-        print(render(scan, profile_name=profile_name, show_near_miss=args.show_near_miss,
+        print(render(outcome.scan, profile_name=profile_name, show_near_miss=args.show_near_miss,
                      show_all=args.show_all, verbose=args.verbose))
-        if store is not None and not args.no_record:
-            run_id = store.record_scan(scan, profile_name, started_at=started_at)
-            print(f"\nrecorded as run {run_id[:8]} in {store.path.name} "
-                  f"(inspect: python -m memory show {run_id[:8]})")
+        if outcome.run_id:
+            print(f"\nrecorded as run {outcome.run_id[:8]} in {store.path.name} "
+                  f"(inspect: python -m memory show {outcome.run_id[:8]})")
         return 0
     finally:
         if own_store:

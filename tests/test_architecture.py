@@ -9,7 +9,7 @@ import pytest
 import main
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGES = ("core", "agent", "bot", "data", "strategy", "execution", "memory")
+PACKAGES = ("core", "agent", "bot", "data", "strategy", "execution", "memory", "api")
 
 # Package -> project packages it must never import.
 FORBIDDEN_IMPORTS = {
@@ -24,6 +24,8 @@ FORBIDDEN_IMPORTS = {
     "data": {"bot", "execution", "agent", "anthropic"},
     # Memory is an audit store: it records and replays, it never trades or calls an LLM.
     "memory": {"bot", "execution", "agent", "anthropic"},
+    # The dashboard API is a viewer: it never reaches risk/execution, the agent, or an LLM SDK.
+    "api": {"bot", "execution", "agent", "anthropic"},
     # core is the neutral contract; it must not depend on any other project code.
     "core": set(PACKAGES) - {"core"} | {"main", "tests"},
 }

@@ -1,0 +1,2372 @@
+{
+  "components": {
+    "schemas": {
+      "CalculatedOut": {
+        "properties": {
+          "gap_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Pct"
+          },
+          "pct_below_day_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "(day high - price) / day high at fetch time. A snapshot, not a real-time alert.",
+            "title": "Pct Below Day High"
+          },
+          "pct_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Change"
+          },
+          "room_to_resistance_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room To Resistance Pct"
+          },
+          "volume_vs_avg_daily": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Partial session volume / average FULL-DAY volume. Not time-of-day RVOL.",
+            "title": "Volume Vs Avg Daily"
+          }
+        },
+        "required": [
+          "pct_change",
+          "gap_pct",
+          "volume_vs_avg_daily",
+          "room_to_resistance_pct",
+          "pct_below_day_high"
+        ],
+        "title": "CalculatedOut",
+        "type": "object"
+      },
+      "CheckOut": {
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual"
+          },
+          "level": {
+            "enum": [
+              "HARD",
+              "PREFERRED",
+              "OFF"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          }
+        },
+        "required": [
+          "name",
+          "level",
+          "status",
+          "actual",
+          "threshold",
+          "message"
+        ],
+        "title": "CheckOut",
+        "type": "object"
+      },
+      "ConfigFieldOut": {
+        "properties": {
+          "default": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "float",
+              "int",
+              "level"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nullable": {
+            "title": "Nullable",
+            "type": "boolean"
+          },
+          "scan_default": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan Default"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "nullable",
+          "unit",
+          "default",
+          "scan_default",
+          "description"
+        ],
+        "title": "ConfigFieldOut",
+        "type": "object"
+      },
+      "CountsOut": {
+        "properties": {
+          "filtered_out": {
+            "title": "Filtered Out",
+            "type": "integer"
+          },
+          "near_miss": {
+            "title": "Near Miss",
+            "type": "integer"
+          },
+          "qualified": {
+            "title": "Qualified",
+            "type": "integer"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rows",
+          "qualified",
+          "near_miss",
+          "filtered_out",
+          "rejected"
+        ],
+        "title": "CountsOut",
+        "type": "object"
+      },
+      "ErrorOut": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "message"
+        ],
+        "title": "ErrorOut",
+        "type": "object"
+      },
+      "FreshnessOut": {
+        "properties": {
+          "fetched_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When we received the Finviz response (UTC)",
+            "title": "Fetched At"
+          },
+          "fetched_at_et": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "fetched_at in US Eastern time",
+            "title": "Fetched At Et"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "quote_freshness": {
+            "enum": [
+              "UNKNOWN",
+              "VERIFIED"
+            ],
+            "title": "Quote Freshness",
+            "type": "string"
+          },
+          "quote_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Market timestamp of the quotes; Finviz provides none",
+            "title": "Quote Time"
+          },
+          "seconds_since_fetch": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Age of the fetch, NOT of the quotes",
+            "title": "Seconds Since Fetch"
+          }
+        },
+        "required": [
+          "fetched_at",
+          "fetched_at_et",
+          "quote_freshness",
+          "seconds_since_fetch",
+          "note"
+        ],
+        "title": "FreshnessOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthOut": {
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "database_exists": {
+            "title": "Database Exists",
+            "type": "boolean"
+          },
+          "finviz_key_configured": {
+            "title": "Finviz Key Configured",
+            "type": "boolean"
+          },
+          "order_execution_enabled": {
+            "const": false,
+            "default": false,
+            "title": "Order Execution Enabled",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "server_time": {
+            "format": "date-time",
+            "title": "Server Time",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "trading_mode": {
+            "const": "RESEARCH_ONLY",
+            "default": "RESEARCH_ONLY",
+            "title": "Trading Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "api_version",
+          "server_time",
+          "database_exists",
+          "schema_version",
+          "finviz_key_configured"
+        ],
+        "title": "HealthOut",
+        "type": "object"
+      },
+      "MarketOut": {
+        "properties": {
+          "average_daily_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Daily Volume"
+          },
+          "cumulative_volume": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cumulative Volume"
+          },
+          "day_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day High"
+          },
+          "day_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Low"
+          },
+          "float_shares": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Float Shares"
+          },
+          "open_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Price"
+          },
+          "previous_close": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Close"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "trades": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trades"
+          }
+        },
+        "required": [
+          "price",
+          "previous_close",
+          "open_price",
+          "day_high",
+          "day_low",
+          "cumulative_volume",
+          "average_daily_volume",
+          "float_shares",
+          "trades"
+        ],
+        "title": "MarketOut",
+        "type": "object"
+      },
+      "ModuleOut": {
+        "properties": {
+          "data_source": {
+            "title": "Data Source",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "AVAILABLE",
+              "PARTIAL",
+              "UNAVAILABLE"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "data_source",
+          "detail"
+        ],
+        "title": "ModuleOut",
+        "type": "object"
+      },
+      "NewsOut": {
+        "properties": {
+          "classification": {
+            "const": "UNCLASSIFIED",
+            "default": "UNCLASSIFIED",
+            "title": "Classification",
+            "type": "string"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Finviz 'News Time' text, as received (time zone not documented)",
+            "title": "Time"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "time",
+          "title"
+        ],
+        "title": "NewsOut",
+        "type": "object"
+      },
+      "ProfileOut": {
+        "properties": {
+          "filters": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Filters",
+            "type": "array"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "filters",
+          "is_default"
+        ],
+        "title": "ProfileOut",
+        "type": "object"
+      },
+      "ReplayChangeOut": {
+        "properties": {
+          "failed_hard_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failed Hard Checks",
+            "type": "array"
+          },
+          "original_status": {
+            "enum": [
+              "QUALIFIED",
+              "NEAR_MISS",
+              "FILTERED_OUT",
+              "REJECTED"
+            ],
+            "title": "Original Status",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "row_number": {
+            "title": "Row Number",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "QUALIFIED",
+              "NEAR_MISS",
+              "FILTERED_OUT",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "row_number",
+          "ticker",
+          "original_status",
+          "status",
+          "failed_hard_checks",
+          "reasons"
+        ],
+        "title": "ReplayChangeOut",
+        "type": "object"
+      },
+      "ReplayIn": {
+        "properties": {
+          "overrides": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "InPlayConfig fields to change, e.g. {'min_pct_change': 0.2}",
+            "title": "Overrides",
+            "type": "object"
+          }
+        },
+        "title": "ReplayIn",
+        "type": "object"
+      },
+      "ReplayOut": {
+        "properties": {
+          "applied_overrides": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Applied Overrides",
+            "type": "object"
+          },
+          "changed": {
+            "items": {
+              "$ref": "#/components/schemas/ReplayChangeOut"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/CountsOut"
+          },
+          "in_play_config": {
+            "additionalProperties": true,
+            "title": "In Play Config",
+            "type": "object"
+          },
+          "note": {
+            "default": "Replays are computed on stored snapshots and never written to history.",
+            "title": "Note",
+            "type": "string"
+          },
+          "original_counts": {
+            "$ref": "#/components/schemas/CountsOut"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "applied_overrides",
+          "in_play_config",
+          "counts",
+          "original_counts",
+          "changed"
+        ],
+        "title": "ReplayOut",
+        "type": "object"
+      },
+      "RowDetailOut": {
+        "properties": {
+          "calculated": {
+            "$ref": "#/components/schemas/CalculatedOut"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "failed_hard_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failed Hard Checks",
+            "type": "array"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessOut"
+          },
+          "hard_checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckOut"
+            },
+            "title": "Hard Checks",
+            "type": "array"
+          },
+          "hard_failures": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hard Failures"
+          },
+          "market": {
+            "$ref": "#/components/schemas/MarketOut"
+          },
+          "news": {
+            "$ref": "#/components/schemas/NewsOut"
+          },
+          "normalization_errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Normalization Errors",
+            "type": "array"
+          },
+          "qualified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualified"
+          },
+          "quality_checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckOut"
+            },
+            "title": "Quality Checks",
+            "type": "array"
+          },
+          "quality_passed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Passed"
+          },
+          "quality_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Total"
+          },
+          "raw": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Unchanged Finviz CSV cells",
+            "title": "Raw",
+            "type": "object"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "row_number": {
+            "title": "Row Number",
+            "type": "integer"
+          },
+          "session": {
+            "title": "Session",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "QUALIFIED",
+              "NEAR_MISS",
+              "FILTERED_OUT",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "valid_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Data"
+          },
+          "vendor": {
+            "$ref": "#/components/schemas/VendorOut"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "warnings_count": {
+            "title": "Warnings Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row_number",
+          "ticker",
+          "company",
+          "exchange",
+          "status",
+          "hard_failures",
+          "failed_hard_checks",
+          "reasons",
+          "warnings_count",
+          "market",
+          "calculated",
+          "vendor",
+          "news",
+          "qualified",
+          "valid_data",
+          "hard_checks",
+          "quality_checks",
+          "quality_passed",
+          "quality_total",
+          "warnings",
+          "normalization_errors",
+          "raw",
+          "session",
+          "freshness"
+        ],
+        "title": "RowDetailOut",
+        "type": "object"
+      },
+      "RowOut": {
+        "properties": {
+          "calculated": {
+            "$ref": "#/components/schemas/CalculatedOut"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "failed_hard_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failed Hard Checks",
+            "type": "array"
+          },
+          "hard_failures": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hard Failures"
+          },
+          "market": {
+            "$ref": "#/components/schemas/MarketOut"
+          },
+          "news": {
+            "$ref": "#/components/schemas/NewsOut"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "row_number": {
+            "title": "Row Number",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "QUALIFIED",
+              "NEAR_MISS",
+              "FILTERED_OUT",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "ticker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticker"
+          },
+          "vendor": {
+            "$ref": "#/components/schemas/VendorOut"
+          },
+          "warnings_count": {
+            "title": "Warnings Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row_number",
+          "ticker",
+          "company",
+          "exchange",
+          "status",
+          "hard_failures",
+          "failed_hard_checks",
+          "reasons",
+          "warnings_count",
+          "market",
+          "calculated",
+          "vendor",
+          "news"
+        ],
+        "title": "RowOut",
+        "type": "object"
+      },
+      "RowsPageOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/CountsOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "total",
+          "offset",
+          "limit",
+          "counts",
+          "items"
+        ],
+        "title": "RowsPageOut",
+        "type": "object"
+      },
+      "RunOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/CountsOut"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessOut"
+          },
+          "in_play_config": {
+            "additionalProperties": true,
+            "title": "In Play Config",
+            "type": "object"
+          },
+          "payload_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload Sha256"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "screen_config": {
+            "additionalProperties": true,
+            "title": "Screen Config",
+            "type": "object"
+          },
+          "session": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session"
+          },
+          "short_id": {
+            "title": "Short Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "OK",
+              "ERROR"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "short_id",
+          "profile",
+          "status",
+          "provider",
+          "started_at",
+          "recorded_at",
+          "session",
+          "counts",
+          "error",
+          "screen_config",
+          "in_play_config",
+          "payload_sha256",
+          "freshness"
+        ],
+        "title": "RunOut",
+        "type": "object"
+      },
+      "ScanIn": {
+        "properties": {
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "title": "ScanIn",
+        "type": "object"
+      },
+      "ScanJobOut": {
+        "properties": {
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CountsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "state": {
+            "enum": [
+              "RUNNING",
+              "SUCCEEDED",
+              "FAILED"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "profile",
+          "state",
+          "requested_at",
+          "finished_at",
+          "run_id",
+          "error",
+          "counts"
+        ],
+        "title": "ScanJobOut",
+        "type": "object"
+      },
+      "ScanStatusOut": {
+        "properties": {
+          "cooldown_remaining_seconds": {
+            "title": "Cooldown Remaining Seconds",
+            "type": "number"
+          },
+          "cooldown_seconds": {
+            "title": "Cooldown Seconds",
+            "type": "number"
+          },
+          "finviz_key_configured": {
+            "title": "Finviz Key Configured",
+            "type": "boolean"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanJobOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "running": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanJobOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "running",
+          "latest",
+          "cooldown_seconds",
+          "cooldown_remaining_seconds",
+          "finviz_key_configured"
+        ],
+        "title": "ScanStatusOut",
+        "type": "object"
+      },
+      "TickerHistoryOut": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/TickerObservationOut"
+            },
+            "title": "Observations",
+            "type": "array"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "observations"
+        ],
+        "title": "TickerHistoryOut",
+        "type": "object"
+      },
+      "TickerObservationOut": {
+        "properties": {
+          "cumulative_volume": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cumulative Volume"
+          },
+          "failed_hard_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failed Hard Checks",
+            "type": "array"
+          },
+          "float_shares": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Float Shares"
+          },
+          "pct_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pct Change"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "row_number": {
+            "title": "Row Number",
+            "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "short_id": {
+            "title": "Short Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "QUALIFIED",
+              "NEAR_MISS",
+              "FILTERED_OUT",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "volume_vs_avg_daily": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume Vs Avg Daily"
+          }
+        },
+        "required": [
+          "run_id",
+          "short_id",
+          "started_at",
+          "profile",
+          "row_number",
+          "status",
+          "failed_hard_checks",
+          "price",
+          "pct_change",
+          "cumulative_volume",
+          "volume_vs_avg_daily",
+          "float_shares"
+        ],
+        "title": "TickerObservationOut",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VendorOut": {
+        "properties": {
+          "change_from_open_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change From Open Pct"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          },
+          "gap_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Pct"
+          },
+          "perf_10m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 10M Pct"
+          },
+          "perf_15m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 15M Pct"
+          },
+          "perf_1h_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 1H Pct"
+          },
+          "perf_1m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 1M Pct"
+          },
+          "perf_30m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 30M Pct"
+          },
+          "perf_5m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perf 5M Pct"
+          },
+          "relative_volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relative Volume"
+          }
+        },
+        "required": [
+          "relative_volume",
+          "change_pct",
+          "change_from_open_pct",
+          "gap_pct",
+          "perf_1m_pct",
+          "perf_5m_pct",
+          "perf_10m_pct",
+          "perf_15m_pct",
+          "perf_30m_pct",
+          "perf_1h_pct"
+        ],
+        "title": "VendorOut",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Local, research-only viewer over Finviz scanner history. No order execution.",
+    "title": "AI Trading Agent - Dashboard API",
+    "version": "1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/in-play-config": {
+      "get": {
+        "operationId": "in_play_config_fields_api_in_play_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConfigFieldOut"
+                  },
+                  "title": "Response In Play Config Fields Api In Play Config Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "In Play Config Fields",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/modules": {
+      "get": {
+        "operationId": "list_modules_api_modules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModuleOut"
+                  },
+                  "title": "Response List Modules Api Modules Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Modules",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/profiles": {
+      "get": {
+        "operationId": "list_profiles_api_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileOut"
+                  },
+                  "title": "Response List Profiles Api Profiles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Profiles",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/api/runs": {
+      "get": {
+        "operationId": "list_runs_api_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "OK",
+                    "ERROR"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "title": "Response List Runs Api Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/latest": {
+      "get": {
+        "operationId": "latest_run_api_runs_latest_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/{run_id}/replay": {
+      "post": {
+        "operationId": "replay_api_runs__run_id__replay_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Replay",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/{run_id}/rows": {
+      "get": {
+        "operationId": "list_rows_api_runs__run_id__rows_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "QUALIFIED",
+                      "NEAR_MISS",
+                      "FILTERED_OUT",
+                      "REJECTED"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ticker",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 10,
+                  "pattern": "^[A-Za-z0-9.\\-]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ticker"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "pct_change",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "title": "Order",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RowsPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Rows",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/runs/{run_id}/rows/{row_number}": {
+      "get": {
+        "operationId": "get_row_api_runs__run_id__rows__row_number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "row_number",
+            "required": true,
+            "schema": {
+              "title": "Row Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RowDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Row",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/scans": {
+      "post": {
+        "operationId": "start_scan_api_scans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanJobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Scan",
+        "tags": [
+          "scans"
+        ]
+      }
+    },
+    "/api/scans/status": {
+      "get": {
+        "operationId": "scan_status_api_scans_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Scan Status",
+        "tags": [
+          "scans"
+        ]
+      }
+    },
+    "/api/scans/{job_id}": {
+      "get": {
+        "operationId": "get_scan_api_scans__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanJobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Scan",
+        "tags": [
+          "scans"
+        ]
+      }
+    },
+    "/api/tickers/{ticker}/history": {
+      "get": {
+        "operationId": "ticker_history_api_tickers__ticker__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticker",
+            "required": true,
+            "schema": {
+              "maxLength": 10,
+              "pattern": "^[A-Za-z0-9.\\-]+$",
+              "title": "Ticker",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TickerHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ticker History",
+        "tags": [
+          "tickers"
+        ]
+      }
+    }
+  }
+}

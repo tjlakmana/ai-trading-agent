@@ -12,6 +12,7 @@ Finviz returns. The in-play rules are the same for both.
 from types import MappingProxyType
 
 from data.finviz.config import FinvizScreenConfig
+from strategy.in_play_config import InPlayConfig
 
 BROAD_V1 = "broad_v1"
 STRICT_V1 = "strict_v1"
@@ -22,3 +23,11 @@ PROFILES = MappingProxyType({
     STRICT_V1: FinvizScreenConfig(),
 })
 DEFAULT_PROFILE = STRICT_V1
+
+# In-play settings for manual scans (CLI and dashboard): the strategy defaults
+# plus the V1 regular-session volume minimum. A starting hypothesis.
+DEFAULT_MIN_VOLUME = 500_000
+
+
+def default_scan_in_play_config() -> InPlayConfig:
+    return InPlayConfig(min_cumulative_volume=DEFAULT_MIN_VOLUME)

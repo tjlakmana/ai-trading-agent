@@ -174,6 +174,56 @@ python -m memory replay <run> --set min_pct_change=0.2 --set max_float_shares=10
 
 Polling gives snapshots, not events. Breakout and high-of-day triggers need a real-time intraday feed.
 
+## Dashboard (local, research only)
+
+A dark trading workspace inspired by Ross Cameron's momentum workflow. It has two parts:
+
+- **`api/`:** a FastAPI viewer. It serves `127.0.0.1` only, and its architecture test bars it from importing `bot`, `execution`, `agent` and `anthropic`.
+- **`dashboard/`:** React + TypeScript + Vite.
+
+It shows only real recorded Finviz scans and SQLite history. It cannot place orders.
+
+| Workspace module | Status |
+|---|---|
+| Top Gappers & In-Play Scanner (qualified, near-miss, filtered out, rejected, with explanations for every check) | live |
+| Watchlist & Stock Details (derived watchlist, check explanations, raw / calculated / vendor values) | partial |
+| News Catalysts (Finviz headline per stock, unclassified) | partial |
+| High-of-Day Alerts · 1-/5-min charts · AI agent · paper trading · Level 2 | labelled **unavailable**: no data source yet |
+
+Other pages:
+- **Scan history:** every attempt, including failures.
+- **Run detail with deterministic replay:** replays are never saved.
+- **Ticker history.**
+
+Labelling:
+- `RAW` marks raw Finviz data, `OURS` our calculations, and `FV` Finviz-calculated values (discovery only).
+- Every timestamp shows `fetched_at` in ET. The quote time is shown as **UNKNOWN**, because Finviz provides no quote timestamp.
+
+**Run scan now** starts one guarded manual scan:
+- one scan at a time (a second click while it runs shows the running scan)
+- a 30 s cooldown
+- every attempt is recorded
+
+Run locally, in two terminals from the project root:
+
+```bash
+# Terminal 1 - backend (http://127.0.0.1:8000, API docs at /docs)
+.venv\Scripts\python.exe -m api
+
+# Terminal 2 - frontend (first time: cd dashboard && npm install)
+cd dashboard
+npm run dev            # open http://127.0.0.1:5173
+```
+
+Checks: `npm run typecheck`, `npm test` and `npm run build` (in `dashboard/`), and `pytest` (in the project root).
+
+After changing backend response models, regenerate the TypeScript types:
+
+```bash
+.venv\Scripts\python.exe -m api.openapi_export dashboard/openapi.json
+cd dashboard && npm run gen:api
+```
+
 ## Bot: validation and risk (V1)
 
 Version 1 is **long-only**:
@@ -228,6 +278,8 @@ python -m data.finviz   # manual Finviz in-play scan (needs FINVIZ_API_KEY in .e
 - [ ] Indicators, TradingView via MCP
 - [ ] News integration and AI catalyst interpretation
 - [ ] Time-of-day relative volume (`relative_volume_tod`)
-- [ ] Backtesting, analytics, dashboard
+- [x] Local dashboard: scanner, history, ticker history, replay (`api/`, `dashboard/`)
+- [ ] Dashboard modules needing new data: HOD alerts, charts, AI agent, paper trading, Level 2
+- [ ] Backtesting, analytics
 
 Each component is built and tested independently before it is wired in.
